@@ -28,8 +28,9 @@ var (
 
 func init() {
 	rootCmd.AddCommand(nicheCmd)
-	nicheCmd.Flags().StringVar(&flagChannel, "channel", "", "Channel handle or URL (required, e.g. @mkbhd)")
+	nicheCmd.Flags().StringVar(&flagChannel, "channel", "", "Channel handle or URL (required)")
 	nicheCmd.Flags().BoolVar(&flagDeep, "deep", false, "Deeper analysis (slower, more tokens)")
+	nicheCmd.Flags().BoolVar(&flagNoYouTube, "no-youtube", false, "Force LLM-only mode (skip YouTube Data API)")
 	_ = nicheCmd.MarkFlagRequired("channel")
 }
 
@@ -44,7 +45,7 @@ func runNiche(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	ytClient := pickYouTubeClient()
-	if flagNoYoutube {
+	if flagNoYouTube {
 		ytClient = nil
 	}
 	system, user := prompts.NicheWithData(ctx, ytClient, flagChannel, flagDeep, cfg.Lang)

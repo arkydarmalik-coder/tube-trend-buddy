@@ -24,18 +24,17 @@ var trendCmd = &cobra.Command{
 }
 
 var (
-	flagRegion    string
-	flagCategory  string
-	flagPeriod    string
-	flagNoYoutube bool
+	flagRegion   string
+	flagCategory string
+	flagPeriod   string
 )
 
 func init() {
 	rootCmd.AddCommand(trendCmd)
-	trendCmd.Flags().StringVar(&flagRegion, "region", "US", "ISO country code or region (e.g. ID, US, JP)")
+	trendCmd.Flags().StringVar(&flagRegion, "region", "US", "ISO country code or region")
 	trendCmd.Flags().StringVar(&flagCategory, "category", "general", "Category hint: tech | gaming | finance | etc.")
 	trendCmd.Flags().StringVar(&flagPeriod, "period", "7d", "Lookback period: 1d | 7d | 30d | 90d")
-	trendCmd.Flags().BoolVar(&flagNoYoutube, "no-youtube", false, "Skip YouTube Data API even if a key is set (LLM-only)")
+	trendCmd.Flags().BoolVar(&flagNoYouTube, "no-youtube", false, "Force LLM-only mode (skip YouTube Data API)")
 }
 
 func runTrend(cmd *cobra.Command, args []string) error {
@@ -49,7 +48,7 @@ func runTrend(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	ytClient := pickYouTubeClient()
-	if flagNoYoutube {
+	if flagNoYouTube {
 		ytClient = nil
 	}
 	system, user := prompts.TrendWithData(ctx, ytClient, flagRegion, flagCategory, flagPeriod, cfg.Lang, cfg.Count)

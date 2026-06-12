@@ -10,12 +10,13 @@ import (
 )
 
 var (
-	flagProvider string
-	flagModel    string
-	flagLang     string
-	flagJSON     bool
-	flagCount    int
-	flagYolo     bool
+	flagProvider  string
+	flagModel     string
+	flagLang      string
+	flagJSON      bool
+	flagCount     int
+	flagYolo      bool
+	flagNoYouTube bool // Global flag for skipping YouTube Data API
 )
 
 var rootCmd = &cobra.Command{
@@ -62,4 +63,6 @@ func init() {
 		"Number of suggestions to generate")
 	rootCmd.PersistentFlags().BoolVar(&flagYolo, "yolo", false,
 		"Skip safety disclaimer on the first call")
+	rootCmd.PersistentFlags().BoolVar(&flagNoYouTube, "no-youtube", false,
+		"Force LLM-only mode (skip YouTube Data API)") // Add this line
 }
