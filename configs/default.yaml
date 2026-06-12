@@ -1,0 +1,33 @@
+# Tube Trend Buddy default config
+# All values here can be overridden by env vars or CLI flags (flags > env > file).
+
+provider: openrouter    # openrouter | naraya | gemini | huggingface | ollama
+model: ""               # leave empty to use the provider's default
+api_key: ""             # leave empty to fall back to TTB_API_KEY / provider env
+base_url: ""            # leave empty to use the provider's default
+lang: en                # en | id | es | etc.
+count: 10               # default suggestion count
+timeout_seconds: 90
+
+# Provider-specific defaults (only used if --provider / TTB_PROVIDER matches)
+providers:
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    default_model: anthropic/claude-sonnet-4.6
+    api_key_env: OPENROUTER_API_KEY
+  naraya:
+    base_url: https://router.naraya.ai/v1
+    default_model: MiniMax-M3
+    api_key_env: NARAYA_API_KEY
+  huggingface:
+    base_url: https://router.huggingface.co/v1
+    default_model: Qwen/Qwen3.5-35B-A3B
+    api_key_env: HUGGINGFACE_HUB_TOKEN
+  gemini:
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai/
+    default_model: gemini-2.5-pro
+    api_key_env: GOOGLE_API_KEY
+  ollama:
+    base_url: http://localhost:11434/v1
+    default_model: llama3.2
+    api_key_env: ""
