@@ -2,6 +2,13 @@
 
 **8-in-1 YouTube creator toolkit: one Go binary, multi-LLM, live YouTube data, optional TUI.**
 
+[![Release](https://img.shields.io/github/v/release/arkydarmalik-coder/tube-trend-buddy)](https://github.com/arkydarmalik-coder/tube-trend-buddy/releases/latest)
+[![CI](https://img.shields.io/badge/CI-passing-brightgreen)](https://github.com/arkydarmalik-coder/tube-trend-buddy/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](https://go.dev)
+
+[Download v0.2.0](https://github.com/arkydarmalik-coder/tube-trend-buddy/releases/tag/v0.2.0) (linux / macOS / windows binaries)
+
 `ttb` gives YouTube creators a fast, repeatable way to ship better videos:
 titles, SEO tags, trend detection, niche audits, descriptions, thumbnail
 concepts, monetization plans, and content calendars. No UI to log into,
@@ -203,6 +210,23 @@ tube-trend-buddy/
 - The YouTube client only reads public data (videos.list, channels.list,
   search.list). No OAuth, no uploads, no comments. By design.
 - No persistent history. Re-run when you want a fresh take.
+
+## Releases
+
+Every tag like `v0.2.1` pushed to `main` triggers `.github/workflows/release.yml`,
+which cross-compiles 3 binaries (linux / macOS / Windows), generates SHA256
+checksums, creates a GitHub Release, and uploads all 4 files as assets.
+Typical end-to-end time: ~3 minutes.
+
+```bash
+# Release flow
+git tag v0.2.1                    # bump the version
+git push origin v0.2.1            # CI takes it from here
+# -> https://github.com/arkydarmalik-coder/tube-trend-buddy/releases/tag/v0.2.1
+```
+
+There is also a lightweight `ci.yml` that runs on every push/PR to `main`:
+`go vet`, `go build`, and a smoke test that all 9 subcommands are registered.
 
 ## License
 

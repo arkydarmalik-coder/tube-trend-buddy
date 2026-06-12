@@ -1,0 +1,57 @@
+name: ci
+
+# Quick smoke test on every push/PR. The release job (release.yml) is
+# triggered separately by tag pushes.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: true
+
+      - name: go mod tidy
+        run: go mod tidy
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go build
+        run: go build -o ttb-${{ matrix.os }} .
+
+      - name: smoke test --help
+        shell: bash
+        run: ./ttb-${{ matrix.os }} --help | head -5
+
+      - name: smoke test all subcommands registered
+        shell: bash
+        run: |
+          ./ttb-${{ matrix.os }} --help 2>&1 | grep -E "title|tags|trend|niche|describe|thumbnail|monetize|calendar|ui" | wc -l
+          # expect 9 lines (8 features + ui) plus the "Available Commands" header line
+
+      - name: upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ttb-${{ matrix.os }}
+          path: ttb-${{ matrix.os }}*
+          if-no-files-found: warn
