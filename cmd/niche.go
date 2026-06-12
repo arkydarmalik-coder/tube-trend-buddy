@@ -3,8 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
-	"text/tabwriter"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -15,9 +14,10 @@ import (
 var nicheCmd = &cobra.Command{
 	Use:   "niche",
 	Short: "Audit a YouTube channel + find niche opportunities",
-	Long:  "Reviews positioning, content gaps, and adjacent niches worth expanding into.",
+	Long:  "Uses LLM + (optional) YouTube Data API v3 for live channel/video stats.",
 	Example: `  ttb niche --channel @mkbhd
-  ttb niche --channel @mrbeast --deep`,
+  ttb niche --channel @mrbeast --deep
+  ttb niche --channel @mkbhd --no-youtube          # LLM-only mode`,
 	RunE: runNiche,
 }
 
@@ -28,7 +28,7 @@ var (
 
 func init() {
 	rootCmd.AddCommand(nicheCmd)
-	nicheCmd.Flags().StringVar(&flagChannel, "channel", "", "Channel handle or URL (required)")
+	nicheCmd.Flags().StringVar(&flagChannel, "channel", "", "Channel handle or URL (required, e.g. @mkbhd)")
 	nicheCmd.Flags().BoolVar(&flagDeep, "deep", false, "Deeper analysis (slower, more tokens)")
 	_ = nicheCmd.MarkFlagRequired("channel")
 }
@@ -43,7 +43,11 @@ func runNiche(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	system, user := prompts.Niche(flagChannel, flagDeep, cfg.Lang)
+	ytClient := pickYouTubeClient()
+	if flagNoYoutube {
+		ytClient = nil
+	}
+	system, user := prompts.NicheWithData(ctx, ytClient, flagChannel, flagDeep, cfg.Lang)
 	out, err := client.Complete(ctx, system, user)
 	if err != nil {
 		return err
@@ -52,10 +56,16 @@ func runNiche(cmd *cobra.Command, args []string) error {
 		fmt.Println(out)
 		return nil
 	}
-	fmt.Printf("Niche audit for %q:\n\n", flagChannel)
-	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	for _, line := range splitList(out) {
-		fmt.Fprintln(tw, "  - "+line)
+	header := fmt.Sprintf("Niche audit for %q", flagChannel)
+	if ytClient != nil {
+		header += " (with live YouTube data)"
+	} else {
+		header += " (LLM only)"
 	}
-	return tw.Flush()
+	fmt.Println(header)
+	fmt.Println(strings.Repeat("-", len(header)))
+	for _, line := range splitList(out) {
+		fmt.Println("  - " + line)
+	}
+	return nil
 }

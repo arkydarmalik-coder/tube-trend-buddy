@@ -3,33 +3,39 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/arkydarmalik-coder/tube-trend-buddy/internal/llm"
 	"github.com/arkydarmalik-coder/tube-trend-buddy/internal/prompts"
+	"github.com/arkydarmalik-coder/tube-trend-buddy/internal/youtube"
 )
 
 var trendCmd = &cobra.Command{
 	Use:   "trend",
 	Short: "Detect rising niches + trending topics",
-	Long:  "Uses LLM knowledge + (optional) YouTube Data API context to surface rising niches.",
+	Long:  "Uses LLM knowledge + (optional) YouTube Data API v3 for live trending context.",
 	Example: `  ttb trend --region ID --period 7d
-  ttb trend --region US --category tech --count 15`,
+  ttb trend --region US --category tech --count 15
+  ttb trend --region ID --no-youtube              # LLM-only mode`,
 	RunE: runTrend,
 }
 
 var (
-	flagRegion   string
-	flagCategory string
-	flagPeriod   string
+	flagRegion    string
+	flagCategory  string
+	flagPeriod    string
+	flagNoYoutube bool
 )
 
 func init() {
 	rootCmd.AddCommand(trendCmd)
-	trendCmd.Flags().StringVar(&flagRegion, "region", "US", "ISO country code or region")
+	trendCmd.Flags().StringVar(&flagRegion, "region", "US", "ISO country code or region (e.g. ID, US, JP)")
 	trendCmd.Flags().StringVar(&flagCategory, "category", "general", "Category hint: tech | gaming | finance | etc.")
 	trendCmd.Flags().StringVar(&flagPeriod, "period", "7d", "Lookback period: 1d | 7d | 30d | 90d")
+	trendCmd.Flags().BoolVar(&flagNoYoutube, "no-youtube", false, "Skip YouTube Data API even if a key is set (LLM-only)")
 }
 
 func runTrend(cmd *cobra.Command, args []string) error {
@@ -42,7 +48,11 @@ func runTrend(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	system, user := prompts.Trend(flagRegion, flagCategory, flagPeriod, cfg.Lang, cfg.Count)
+	ytClient := pickYouTubeClient()
+	if flagNoYoutube {
+		ytClient = nil
+	}
+	system, user := prompts.TrendWithData(ctx, ytClient, flagRegion, flagCategory, flagPeriod, cfg.Lang, cfg.Count)
 	out, err := client.Complete(ctx, system, user)
 	if err != nil {
 		return err
@@ -51,9 +61,30 @@ func runTrend(cmd *cobra.Command, args []string) error {
 		fmt.Println(out)
 		return nil
 	}
-	fmt.Printf("Rising niches in %q (category=%s, period=%s):\n\n", flagRegion, flagCategory, flagPeriod)
+	header := fmt.Sprintf("Rising niches in %q (category=%s, period=%s", flagRegion, flagCategory, flagPeriod)
+	if ytClient != nil {
+		header += ", youtube=live"
+	} else {
+		header += ", youtube=off"
+	}
+	header += "):"
+	fmt.Println(header)
+	fmt.Println(strings.Repeat("-", len(header)))
 	for _, line := range splitList(out) {
 		fmt.Println("  > " + line)
 	}
 	return nil
+}
+
+// pickYouTubeClient returns a *youtube.Client if YOUTUBE_API_KEY (or TTB_YOUTUBE_API_KEY)
+// is set, otherwise nil. Callers should pass nil to prompt builders to signal LLM-only mode.
+func pickYouTubeClient() *youtube.Client {
+	key := pickString("", "TTB_YOUTUBE_API_KEY", "")
+	if key == "" {
+		key = os.Getenv("YOUTUBE_API_KEY")
+	}
+	if key == "" {
+		return nil
+	}
+	return youtube.New(key)
 }

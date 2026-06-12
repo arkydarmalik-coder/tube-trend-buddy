@@ -26,15 +26,18 @@ var rootCmd = &cobra.Command{
 8 features, one binary, multi-LLM provider:
   title      AI title generator (CTR-optimized)
   tags       SEO tag optimizer (rank + traffic)
-  trend      Trend detector (rising niches)
-  niche      Niche + channel analyzer
+  trend      Trend detector (rising niches, optional live YouTube data)
+  niche      Niche + channel analyzer (optional live YouTube data)
   describe   Description + hashtag writer
   thumbnail  Thumbnail concept generator
   monetize   Monetization strategy advisor
   calendar   Content calendar planner
 
+Run 'ttb ui' to launch the interactive TUI wizard.
+
 Provider priority: --provider flag > TTB_PROVIDER env > openrouter.
-API key: --api-key flag > TTB_API_KEY env > provider-specific env.`,
+API key: TTB_API_KEY env or provider-specific env (e.g. OPENROUTER_API_KEY).
+YouTube data: YOUTUBE_API_KEY env (only used by trend + niche).`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
